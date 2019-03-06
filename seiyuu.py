@@ -6,16 +6,44 @@ jikan = Jikan()
 def query_anime(keyword):
     response = jikan.search('anime', str(keyword))
     results = response['results']
-    for instance in results[:5]:
+    for instance in results[:10]:
         print ("`%s`: %d\n" % (instance['title'], instance['mal_id']))
 
+
+
+def show_common(malid1, malid2):
+    anime1 = jikan.anime(int(malid1), extension='characters_staff')
+    anime2 = jikan.anime(int(malid2), extension='characters_staff')
+
+    cast1 = list()
+    cast2 = list()
+    casta = list()
+    for char in anime1['characters']:
+        for va in char['voice_actors']:
+            if va['language'] == 'Japanese':
+                cast1.append((va['name'], char['name']))
+                casta.append(va['name'])
+    for char in anime2['characters']:
+        for va in char['voice_actors']:
+            if va['language'] == 'Japanese':
+                cast2.append((va['name'], char['name']))
+                casta.append(va['name'])
+    for i in set(casta):
+        c1 = [ch for va, ch in cast1 if va == i]
+        c2 = [ch for va, ch in cast2 if va == i]
+        if len(c1) * len(c2) > 0:
+            print ("%s & %s (%s)\n" % (c1[0], c2[0], i))
 
 def get_vas(malid):
     anime = jikan.anime(int(malid), extension='characters_staff')
     common = Counter()
     rel = get_related(malid)
+    vas = set()
     for char in anime['characters']:
         for va in char['voice_actors']:
+            if va['mal_id'] in vas:
+                continue
+            vas.add(va['mal_id'])
             if va['language'] == 'Japanese':
                 per = jikan.person(va['mal_id'])
                 roles = [role['anime']['mal_id'] for role in per['voice_acting_roles']]
