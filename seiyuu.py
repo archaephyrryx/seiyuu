@@ -2,6 +2,9 @@ from jikanpy import Jikan
 import pickle
 from collections import Counter, defaultdict
 
+NRESULTS_SEARCH = 10
+NRESULTS_COMMON = 10
+
 class MemoCache():
     def __init__(self, j):
         self.api = j
@@ -43,7 +46,6 @@ class MemoCache():
                 blob.union(self.related_deep(i, blob))
         return blob
 
-
     def query_related(self, malid):
         if not malid in self.q_related:
             x = self.related_deep(malid, set())
@@ -54,20 +56,20 @@ class MemoCache():
         return x
 
     def save(self):
-        with open("anime.dat") as ani:
+        with open("anime.dat", "w+b") as ani:
             pickle.dump(self.q_anime, ani)
-        with open("person.dat") as per:
+        with open("person.dat", "w+b") as per:
             pickle.dump(self.q_person, per)
-        with open("related.dat") as rel:
+        with open("related.dat", "w+b") as rel:
             pickle.dump(self.q_related, rel)
 
     def restore(self):
         try:
-            with open("anime.dat") as ani:
+            with open("anime.dat", "r+b") as ani:
                 self.q_anime = pickle.load(ani)
-            with open("person.dat") as per:
+            with open("person.dat", "r+b") as per:
                 self.q_person = pickle.load(per)
-            with open("related.dat") as rel:
+            with open("related.dat", "r+b") as rel:
                 self.q_related = pickle.load(rel)
         except OSError as err:
             print("OS error: {0}".format(err))
@@ -79,7 +81,7 @@ memo = MemoCache(Jikan())
 def search_anime(keyword):
     response = memo.api.search('anime', str(keyword))
     results = response['results']
-    for instance in results[:10]:
+    for instance in results[:NRESULTS_SEARCH]:
         print ("`%s`: %d\n" % (instance['title'], instance['mal_id']))
 
 
@@ -123,5 +125,5 @@ def get_vas(malid):
                 for i in set(roles):
                     if not i == malid and not i in rel:
                         common[i] += 1
-    for an, count in common.most_common(10):
+    for an, count in common.most_common(NRESULTS_COMMON):
         print ("%s (%d) @%d\n" % (memo.query_anime(an)['title'], an, count))
