@@ -1,4 +1,5 @@
-from jikanpy import Jikan, exceptions.APIException
+from jikanpy import Jikan
+from jikanpy.exceptions import APIException
 import pickle
 from collections import Counter, defaultdict
 from time import sleep
@@ -53,7 +54,7 @@ class MemoCache():
             try:
                 x = f()
                 return x
-            except exceptions.APIException as api_err:
+            except APIException as api_err:
                 print("MemoCache: API raised error, will try again in 10 seconds")
                 print("({0})".format(api_err))
                 if cur_iter >= max_iter:
@@ -174,6 +175,7 @@ def show_common(malid1, malid2):
             if va['language'] == 'Japanese':
                 cast2.append((va['name'], char['name']))
                 casta.append(va['name'])
+    print ("Character Comparison: %s (%d) & %s (%d)" % (memo.get_title(malid1), malid1, memo.get_title(malid2), malid2))
     for i in set(casta):
         c1 = [ch for va, ch in cast1 if va == i]
         c2 = [ch for va, ch in cast2 if va == i]
