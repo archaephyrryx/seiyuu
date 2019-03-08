@@ -61,7 +61,7 @@ class MemoCache():
                     raise api_err
                 else:
                     cur_iter += 1
-                    time.sleep(10)
+                    sleep(10)
 
 
 
@@ -78,7 +78,8 @@ class MemoCache():
     def search_anime(self, keyword, nresults=NRESULTS_SEARCH):
         response = self.__spincycle(lambda: self.api.search('anime', str(keyword)))
         results = response['results']
-        for iden, title in list(self.__scan_assocs(results))[:nresults]:
+        self.__scan_assocs(results)
+        for iden, title in [(x['mal_id'], x['title']) for x in results][:nresults]:
             print ("`%s`: %d\n" % (title, iden))
 
     def get_title(self, malid):
@@ -182,9 +183,12 @@ def show_common(malid1, malid2):
         if len(c1) * len(c2) > 0:
             print ("%s & %s (%s)\n" % (c1[0], c2[0], i))
 
-def get_vas(malid, nresults=NRESULTS_COMMON):
+def get_vas(malid, nresults=NRESULTS_COMMON, deep_check=True):
     anime = memo.query_anime_chars(malid)
-    rel = memo.query_related(malid)
+    if deep_check:
+        rel = memo.query_related(malid)
+    else:
+        rel = set([malid])
     common = Counter()
     vas = set()
     for char in anime['characters']:
