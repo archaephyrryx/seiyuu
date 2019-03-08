@@ -50,16 +50,19 @@ support, but this is not currently as planned feature.
 
 Error-handling is all-but-nonexistant, and the script does not gracefully handle any of the following scenarios:
   - Keyboard interrupt mid-query
-  - 429 Error from the API
-  - API queries that fail for no obvious reason
+
+There is limited support for catching API exceptions and retrying until timeout, but this is currently agnostic as to whether the error is a 429 error or a 404 error. As 429 indicates that repeated attempts may prove fruitful, and 404 indicates that no amount of repetitions will succeed, this distinction is currently a planned feature.
  
-It is recommended that before the termination of a REPL session, `memo.save()` is run to preserve results, and `memo.restore()`
+It is recommended that before the termination of a REPL session, `memo.save()` is run to preserve results, and `memo.restore(True)`
 is run at the start of each fresh session to load the historical cache. The filenames used for reading and writing the caches
 are currently hard-coded as:
   - `anime.dat` for show information
   - `person.dat` for voice-actor information
   - `related.dat` for association of shows to their entire franchise
-  
+
+There is a secondary database of title-id correspondences that is useful for human-legible reporting down the line,
+and can even be used in some cases to bypass the need for preliminary searches for the ID corresponding to a keyword if the exact title is known. This data, however, can be inferred from the `anime.dat` contents and the `person.dat` contents, so it is not stored as a separate file but is rather recomputed. The recording process for this data is currently experimental and isn't guaranteed to work 100% of the time, but any results that are returned are authentic.
+
 Contribution
 ============
 
