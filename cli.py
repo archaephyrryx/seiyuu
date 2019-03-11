@@ -1,9 +1,12 @@
 from prompt_toolkit import prompt, PromptSession
 from seiyuu import *
 
+modes = [ "search", "graph", "compare", "id", "audit" ]
+
 commands = { 'quit':'quit'
            , 'exit':'quit'
            , 'help':'help'
+           , 'mode':'mode'
            , 'search':'search'
            , 'find':'search'
            , 'lookup':'search'
@@ -13,10 +16,16 @@ desc = { 'quit':["terminates a CLI session"]
        , 'help':[ "displays a list of available commands"
                 , "prints usage information for"
                 ]
+       , 'mode':[ "display current mode"
+                , "switch to mode"
+                ]
        }
 
 
 comlist = commands.keys()
+
+def show_env(env):
+    print(str(env))
 
 def alias(arg):
     if arg in set(commands.values()):
@@ -60,8 +69,63 @@ def parse_cmd(s):
     (cmd, sp, arg) = s.partition(" ")
     return cmd, arg.strip()
 
+def write_registers(vals, env):
+    env['registers'].clear()
+    for i in range(len(vals)):
+        env['registers'][('%'+str(i))] = vals[i]
+    return
 
-def main(session):
+def do_mode(session, mode, env, current="main"):
+    if len(mode) == 0:
+        print("[mode]: currently in mode '%s'" % current)
+        return 0
+    if mode not in modes:
+        print ("[mode]: no such mode '%s'" % mode)
+        do_help("mode", "mode")
+        return 1
+    else:
+        if mode == "search":
+            v = do_query_mode(session, env)
+            return v
+
+def do_query_mode(session, env):
+    while True:
+        try:
+            query = session.prompt("*search> ")
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            return 0
+        else:
+            if query[0] == "%":
+                print("[*search] interpreting %s as a register..." % query)
+                if query in env['registers']:
+                    anime = memo.query_anime(env['registers'][query])
+                    print("[*search]: pretty printing not yet implemented ¯\_(ツ)_/¯")
+                    print(str(anime))
+                    continue
+                else:
+                    print("[*search]: no such register '%s'" % query)
+                    continue
+            elif query[0] == "!":
+                esc = query[1:]
+                if esc in commands:
+                    esc = commands[esc]
+                if esc == "done":
+                    return 0
+                if esc == "quit":
+                    return -1
+                if esc == "env":
+                    show_env(env)
+                    continue
+            else:
+                ids = list(memo.search_anime(query, cli_mode=True))
+                write_registers(ids, env)
+                continue
+
+
+def main(session, env):
+    memo.restore(True)
     while True:
         try:
             resp = session.prompt("seiyuu> ")
@@ -83,10 +147,22 @@ def main(session):
             elif trans == "help":
                 do_help(cmd, arg)
                 continue
+            elif trans == "mode":
+                v = do_mode(session, arg, env)
+                if v == -1:
+                    break
+                continue
             else:
                 print("command '%s' not currently supported" % cmd)
 
 
+def cleanup():
+    memo.save()
+
 if __name__ == '__main__':
     session = PromptSession()
-    main(session)
+    env = defaultdict(dict)
+    try: 
+        main(session, env)
+    finally:
+        cleanup()

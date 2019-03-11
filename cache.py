@@ -73,13 +73,18 @@ class MemoCache():
             x = self.q_person[malid]
         return x
 
-    def search_anime(self, keyword, nresults=NRESULTS_SEARCH):
+    def search_anime(self, keyword, nresults=NRESULTS_SEARCH, cli_mode=False):
         try: 
             response = self.__spincycle(lambda: self.api.search('anime', str(keyword)))
             results = response['results']
             self.__scan_assocs(results)
-            for iden, title in [(x['mal_id'], x['title']) for x in results][:nresults]:
+            ret = [(x['mal_id'], x['title']) for x in results][:nresults]
+            for i in range(len(ret)):
+                iden, title = ret[i]
+                if cli_mode:
+                    print("%%%d:" % i, end=" ")
                 print ("`%s`: %d\n" % (title, iden))
+                yield iden
         except APIException as api_err:
             print('MemoCache.search_anime: API lookup failed for keyword <"%s">' % (keyword))
 
