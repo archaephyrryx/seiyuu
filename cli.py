@@ -1,3 +1,4 @@
+#coding=utf-8
 from prompt_toolkit import prompt, PromptSession
 from seiyuu import *
 
@@ -19,6 +20,9 @@ desc = { 'quit':["terminates a CLI session"]
        , 'mode':[ "display current mode"
                 , "switch to mode"
                 ]
+       , 'search':[ "enters search mode and parses query strings"
+                  , "remain in current mode and perform a lookup using keyword"
+                  ]
        }
 
 
@@ -85,43 +89,73 @@ def do_mode(session, mode, env, current="main"):
         return 1
     else:
         if mode == "search":
-            v = do_query_mode(session, env)
+            v = do_query_mode(session, env, compare=False)
+            return v
+        if mode == "compare":
+            v = do_query_mode(session, env, compare=True)
             return v
 
-def do_query_mode(session, env):
+def pretty_print(anime, caller=""):
+    print(caller+"pretty printing not yet implemented ¯\_(ツ)_/¯")
+    print(str(anime))
+    return
+
+def do_query_mode(session, env, compare=False):
+    lcomp = compare
     while True:
+        modstr = "*compare" if lcomp else "*search"
         try:
-            query = session.prompt("*search> ")
+            query = session.prompt(modstr+"> ")
         except KeyboardInterrupt:
             continue
         except EOFError:
             return 0
         else:
-            if query[0] == "%":
-                print("[*search] interpreting %s as a register..." % query)
-                if query in env['registers']:
-                    anime = memo.query_anime(env['registers'][query])
-                    print("[*search]: pretty printing not yet implemented ¯\_(ツ)_/¯")
-                    print(str(anime))
-                    continue
-                else:
-                    print("[*search]: no such register '%s'" % query)
-                    continue
-            elif query[0] == "!":
+            if query[0] == "!":
                 esc = query[1:]
                 if esc in commands:
                     esc = commands[esc]
-                if esc == "done":
+                    continue
+                elif esc == "done":
                     return 0
-                if esc == "quit":
+                elif esc == "quit":
                     return -1
-                if esc == "env":
+                elif esc == "env":
                     show_env(env)
                     continue
+                elif esc == "compare":
+                    lcomp = True
+                    continue
+                elif esc == "search":
+                    lcomp = False
+                    continue
+                else:
+                    print("["+modstr+"] no such escape command %s" % query)
+            elif query in env['registers']:
+                target = env['registers'][query]
+                if lcomp:
+                    get_vas(target)
+                    continue
+                else:
+                    anime = memo.query_anime(target)
+                    pretty_print(anime, caller="["+modstr+"]: ")
+                    continue
             else:
-                ids = list(memo.search_anime(query, cli_mode=True))
-                write_registers(ids, env)
-                continue
+                try:
+                    malid = int(query)
+                except ValueError:
+                    ids = list(memo.search_anime(query, cli_mode=True))
+                    write_registers(ids, env)
+                    continue
+                else:
+                    target = malid
+                    if lcomp:
+                        get_vas(target)
+                        continue
+                    else:
+                        anime = memo.query_anime(target)
+                        pretty_print(anime, caller="["+modstr+"]: ")
+                        continue
 
 
 def main(session, env):
@@ -139,6 +173,8 @@ def main(session, env):
             cmd, arg = parse_cmd(resp)
             if cmd in commands:
                 trans = commands[cmd]
+            else:
+                trans = cmd
             if trans == "quit":
                 v = do_quit(cmd, arg)
                 if v == 0:
@@ -152,8 +188,14 @@ def main(session, env):
                 if v == -1:
                     break
                 continue
+            elif trans == "search":
+                if len(arg) == 0:
+                    v = do_query_mode(session, env, compare=False)
+                    if v == -1:
+                        break
+                    continue
             else:
-                print("command '%s' not currently supported" % cmd)
+                print("command '%s' not currently supported (perhaps it is mode-specific?)" % cmd)
 
 
 def cleanup():
