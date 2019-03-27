@@ -13,6 +13,16 @@ commands = { 'quit':'quit'
            , 'lookup':'search'
            }
 
+escapes = [ 'quit' , 'done' , 'env' , 'help' , 'search' , 'compare' ]
+
+escdesc = { 'quit':"ends session immediately"
+          , 'done':"returns to previous mode"
+          , 'env':"displayes current environment variables"
+          , 'help':"displays list of escape commands"
+          , 'search':"sets sub-mode to 'search'"
+          , 'compare':"sets sub-mode to 'compare'"
+          }
+
 desc = { 'quit':["terminates a CLI session"]
        , 'help':[ "displays a list of available commands"
                 , "prints usage information for"
@@ -24,6 +34,11 @@ desc = { 'quit':["terminates a CLI session"]
                   , "remain in current mode and perform a lookup using keyword"
                   ]
        }
+
+
+def show_esc_help():
+    for c in escapes:
+        print ("[help] !%s: %s" % (c, escdesc[c]))
 
 
 comlist = commands.keys()
@@ -128,6 +143,8 @@ def do_query_mode(session, env, compare=False):
                 elif esc == "search":
                     lcomp = False
                     continue
+                elif esc == "help":
+                    show_esc_help()
                 else:
                     print("["+modstr+"] no such escape command %s" % query)
             elif query in env['registers']:
@@ -149,13 +166,16 @@ def do_query_mode(session, env, compare=False):
                 else:
                     target = malid
                     if lcomp:
-                        get_vas(target)
+                        do_compare_mode(target)
                         continue
                     else:
                         anime = memo.query_anime(target)
                         pretty_print(anime, caller="["+modstr+"]: ")
                         continue
 
+
+def do_compare_mode(target):
+    get_vas(target)
 
 def main(session, env):
     memo.restore(True)
