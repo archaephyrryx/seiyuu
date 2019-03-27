@@ -115,8 +115,7 @@ def do_query_mode(session, env, compare=False):
                 esc = query[1:]
                 if esc in commands:
                     esc = commands[esc]
-                    continue
-                elif esc == "done":
+                if esc == "done":
                     return 0
                 elif esc == "quit":
                     return -1
