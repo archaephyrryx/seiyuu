@@ -14,8 +14,10 @@ The scope of this program is not currently set, and it may gain new features ove
 Prerequesites
 =============
 
-The only external library that this script uses is that of JikanPy, the installation instructions for which
+The only external library that `seiyuu.py` uses is that of JikanPy, the installation instructions for which
 can be found on the library's github page.
+
+`cli.py` additionally relies on the `prompt_toolkit` python library. As `cli.py` is an interface to the `seiyuu.py` library code, this is a recommended (but not strictly necessary) dependency.
 
 Features
 ========
@@ -35,8 +37,8 @@ The current supported features include:
   
 The exposed top-level functions in the library do not perform API request calls directly, but instead filter requests through
 a local cache that reduces the API request load by memoizing the results of all previous API lookups. This is especially
-important for searches that would normally cause 429 errors due to high query volume, as it is possible to save and restore even
-partial results to avoid redundant API queries.
+important for searches that would normally cause 429 (too many requests) errors due to high query volume, as it is possible to save and restore (even
+partial) results to avoid redundant API queries.
 
 Complexity
 ==========
@@ -44,11 +46,20 @@ Complexity
 As implemented, the number of calls required to complete a full query of shows with common VAs is proportional to the number of
 voice actors in the query show, and the number of anime in the same franchise (according to MAL) as the query show. Therefore,
 query shows like Detective Conan (MAL ID: 235) with a large number (>30) of related shows and a huge number (>400) of voice actors
-pose a challenge to the capabilities of this script.
+pose a challenge to the capabilities of this script. In response to such issues, the current implementation of the `cache.py` backend is designed to re-attempt any failed API query up to N times, with a wait period of M seconds between repeated attempts, where M is currently 10 and N is 6 (based on the 60-second refresh period of JikanPy MAL API queries). If the 6th retry (i.e. overall 7th attempt) is unsuccessful, the failed query records a non-response in the cache to avoid making the same doomed queries over and over again between calls or sessions. This method is used to indirectly gauge whether failed queries are caused by API overload, or whether the API responded with a 404 error.
 
-In response to such issues, the current incarnation of the `cache.py` backend is designed to re-attempt each failed query up to N times with a wait period of M seconds, where M is currently 10 and N is 6. If the 6th retry (overall 7th attempt) is unsuccessful, the failed query records a non-response in the cache to avoid making the same doomed queries over and over again between calls or sessions.
+As results are automatically loaded at the beginning of each CLI session and saved on (graceful) exit, the CLI can be slightly more user-friendly in terms of tolerating such partial progress. This effect can be partially emulated in the pure-REPL mode of execution by enclosing any API-based lookup function-stack as follows:
 
-As results are automatically loaded at the beginning of each CLI session and saved on (graceful) exit, the CLI can be slightly more user-friendly in terms of tolerating such partial progress.
+```python
+try:
+	memo.restore(True)
+	# your queries here
+finally:
+	memo.save()
+```
+
+This ensures that, even if execution would be terminated prematurely due to an uncaught exception or a KeyboardInterrupt, the partial results collected up until said exception are saved so that repeated attempts can make incremental progress and avoid duplicating effort. This does, however, mean that potentially successful queries may be death-marked due to premature termination, which may require manual adjustment to purge stale negative results.
+
 
 CLI
 ===
