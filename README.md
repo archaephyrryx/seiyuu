@@ -64,6 +64,14 @@ This ensures that, even if execution would be terminated prematurely due to an u
 CLI
 ===
 
+To invoke the CLI, simply run `python3 cli.py` from the command line.
+
+The CLI offers a more seamless and intuitive experience, but not as flexible as in-REPL function calls in terms of what features are available.
+
+The `help` command in top-level mode, and the `!help` command in sub-modes, list the full set of available commands that can be invoked currently.
+
+The command prompt indicates the current mode or sub-mode, and any bound state associated therewith.
+
 As the CLI is still in its relative infancy, documenting its incremental features is somewhat laborious. Once it has
 reached a sufficient functionality, its usage patterns and capabilities are planned to be added to the repository wiki.
 

@@ -166,7 +166,11 @@ def do_query_mode(session, env, compare=False):
                 else:
                     target = malid
                     if lcomp:
-                        do_compare_mode(target)
+                        v = do_compare_mode(target)
+                        if v == -1:
+                            return v
+                        if v == 0:
+                            lcomp = False
                         continue
                     else:
                         anime = memo.query_anime(target)
@@ -175,7 +179,50 @@ def do_query_mode(session, env, compare=False):
 
 
 def do_compare_mode(target):
-    get_vas(target)
+    ids = list(get_vas(target))
+    write_registers(ids, env)
+    modstr = "*compare ("+str(target)+")"
+    while True:
+        try:
+            query = session.prompt(modstr+"> ")
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            return -1
+        else:
+            if query[0] == "!":
+                esc = query[1:]
+                if esc in commands:
+                    esc = commands[esc]
+                if esc == "done":
+                    return 0
+                elif esc == "quit":
+                    return -1
+                elif esc == "env":
+                    show_env(env)
+                    continue
+                elif esc == "compare":
+                    return 1
+                    continue
+                elif esc == "search":
+                    return 0
+                    continue
+                elif esc == "help":
+                    show_esc_help()
+                else:
+                    print("["+modstr+"] no such escape command %s" % query)
+            elif query in env['registers']:
+                secondary = env['registers'][query]
+                show_common(target, secondary)
+            else:
+                try:
+                    malid = int(query)
+                except ValueError:
+                    ids = list(memo.search_anime(query, cli_mode=True))
+                    write_registers(ids, env)
+                    continue
+                else:
+                    show_common(target, malid)
 
 def main(session, env):
     memo.restore(True)

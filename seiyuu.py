@@ -54,3 +54,4 @@ def get_vas(malid, nresults=NRESULTS_COMMON, deep_check=True):
                         common[i] += 1
     for an, count in common.most_common(nresults):
         print ("%s (%d) @%d\n" % (memo.get_title(an), an, count))
+        yield an
