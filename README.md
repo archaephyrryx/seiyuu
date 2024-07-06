@@ -2,6 +2,11 @@
 A python program for querying anime based on common voice-actors using JikanPy, coupled
 with a prototype CLI frontend.
 
+NOTICE
+======
+
+Due to the deprecation of the Jikan v3 API endpoints, this tool can no longer fetch live updates from MAL. A bump to v4 may be implemented, but for now this tool is broken.
+
 Overview
 ========
 
